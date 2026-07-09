@@ -1,0 +1,29 @@
+# LaTeX build artifacts
+*.aux
+*.bcf
+*.blg
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+
+# Local robot/model/data outputs
+data/
+outputs/
+my_models/
+wandb/
+*.mp4
+*.parquet
+
+# Editor and workspace artifacts
+.DS_Store
+.obsidian/
+.vscode/
+.idea/
+.codex/
+.claude/
+
+# Large or unrelated source checkouts
+lerobot/
