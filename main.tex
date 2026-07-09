@@ -20,7 +20,7 @@
 \usepackage{parskip}
 
 % Hyperlinks
-\usepackage[hidelinks]{hyperref}
+\usepackage[colorlinks=true, linkcolor=blue, filecolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
 \def\UrlBreaks{\do\/\do-\do\.\do\_}
 
 % Bibliography
@@ -45,51 +45,51 @@ A Practical Study with SmolVLA on the SO-101 Robotic Arm}
 \maketitle
 
 \begin{abstract}
-Laboratory robots such as the Opentrons OT-2 are reliable when the deck layout is fixed, but they cannot correct for small physical changes without recalibration. Vision-Language-Action (VLA) models offer a possible alternative because they map camera observations and a task description directly to robot actions learned from demonstrations. This report evaluates whether a compact VLA, SmolVLA-450M, can perform a tube-in-hole manipulation task on an SO-101 arm under changes that are plausible in a shared chemistry-lab setting. For the final run, I trained on 50 episodes selected after more than 300 total recorded episodes during setup and testing, and fine-tuned the model on one A100 GPU. The model succeeded in 9 out of 10 trials when the scene matched the training setup, but only 5 out of 10 trials when the tube started in positions absent from the final training set. Moderate lighting changes had limited effect, while a small overhead-camera displacement caused complete failure. The results show that compact VLAs can execute a simple lab-relevant manipulation under tightly controlled conditions, but their practical use depends strongly on camera rigidity, spatial coverage in the demonstrations, and reliable end-effector hardware. Project files, including inference scripts, are available in a private GitHub repository: \href{https://github.com/FerdinandPaar/so101-smolvla-pipe-in-hole}{so101-smolvla-pipe-in-hole}. The dataset and trained model are available on Hugging Face Hub: \href{https://huggingface.co/datasets/mundgelenk/so101_50_pipe_in_hole}{dataset} and \href{https://huggingface.co/mundgelenk/smolvla_so101_pipe_in_hole}{model}.
+Robots such as the Opentrons OT-2 work well when the deck is calibrated and nothing moves, but small physical changes still need human correction. In this project I tested whether a compact Vision-Language-Action (VLA) model can make one simple lab-style manipulation less dependent on fixed coordinates. I fine-tuned SmolVLA-450M on an SO-101 arm for a tube-in-hole task. For the final run, I trained on 50 episodes selected after more than 300 total recorded episodes during setup and testing, and fine-tuned the model on one A100 GPU. The model succeeded in 9 out of 10 trials when the scene matched the training setup, but only 5 out of 10 trials when the tube started in positions absent from the final training set. Moderate lighting changes had limited effect, while a small overhead-camera displacement caused complete failure. The main result is that the model can do the task under tightly controlled conditions, but it depends heavily on fixed cameras, enough spatial coverage in the demonstrations, and a gripper that can hold the tube reliably. Project files, including inference scripts, are available in a private GitHub repository: \href{https://github.com/FerdinandPaar/so101-smolvla-pipe-in-hole}{so101-smolvla-pipe-in-hole}. The dataset and trained model are available on Hugging Face Hub: \href{https://huggingface.co/datasets/mundgelenk/so101_50_pipe_in_hole}{dataset} and \href{https://huggingface.co/mundgelenk/smolvla_so101_pipe_in_hole}{model}.
 \end{abstract}
 
 \tableofcontents
 \newpage
 
-%% ----------------------------------------------------------------
+% Section
 \section{Introduction}
 \label{sec:intro}
-%% ----------------------------------------------------------------
+% Section
 
-Laboratory automation has become central to modern chemistry, where liquid-handling robots such as the Opentrons OT-2 carry out repetitive pipetting and sample-transfer steps with high throughput and reproducibility \parencite{bolt2025platehandler}. These platforms are reliable because the deck is calibrated and the robot follows fixed coordinates. The same design also makes them brittle: if a tube rack is nudged, a vial is tilted, or a consumable is placed a few millimetres away from its expected position, the robot normally cannot detect the change. It executes the same programmed movement until a human notices the failure and recalibrates the setup.
+Laboratory automation is already useful in chemistry, especially for repetitive pipetting and sample-transfer steps. Robots such as the Opentrons OT-2 can run these steps with good reproducibility when the deck is calibrated \parencite{bolt2025platehandler}. The problem is that this calibration also makes the system quite rigid. If a tube rack is nudged, a vial is tilted, or a consumable is placed a few millimetres away from its expected position, the robot normally does not notice. It follows the same programmed movement until a human catches the mistake and recalibrates the setup.
 
-This problem matters most in semi-structured laboratories. A fully enclosed industrial cell can keep cameras, lighting, and objects fixed. A shared chemistry lab is less controlled: equipment may be moved between users, lighting can change across the day, and objects can be reset by hand. In that setting, a robot that can use vision to correct small layout changes would reduce manual intervention and make laboratory automation more flexible. The relevant question is therefore not only whether a robot can perform a movement once, but whether it can still perform it when the visual scene changes in realistic ways.
+This matters most in a shared lab rather than in a fully closed industrial cell. In a shared lab, people move equipment, light changes during the day, and objects are often reset by hand. A robot that can use vision to deal with small layout changes would be more useful in that kind of setting. So the question is not only whether the robot can do the movement once, but whether it still works when the camera image changes.
 
-Vision-Language-Action (VLA) models are one possible route toward this flexibility. A VLA receives camera observations and a text description of the task, then predicts the next robot actions directly \parencite{brohan2023rt1, zitkovich2023rt2, shukor2025smolvla}. Instead of writing explicit coordinates for every movement, the user records demonstrations and the policy learns to imitate them. This links VLA control to imitation learning, where performance depends strongly on whether the training demonstrations cover the states the learned policy will later encounter \parencite{hussein2017imitation, ross2011dagger}.
+Vision-Language-Action (VLA) models are relevant here because they predict robot actions from camera images and a task description \parencite{brohan2023rt1, zitkovich2023rt2, shukor2025smolvla}. Instead of programming every coordinate by hand, the user records demonstrations and the policy learns from them. This is still imitation learning, so the model depends strongly on what it has seen during training \parencite{hussein2017imitation, ross2011dagger}.
 
-For chemistry-lab manipulation, that dependence on training coverage is the key uncertainty. A compact VLA may learn a useful visual concept such as "tube", but it may also learn that the tube is normally located in a particular image region. Similarly, a small camera shift may change the pixel layout enough that the learned action mapping no longer applies. This project studies that failure boundary on a simplified but lab-relevant task: picking up a test tube and inserting it into a rack slot.
+For this project, this is the main uncertainty. A compact VLA may learn what a tube looks like, but it may also learn that the tube is usually in one part of the image. A small camera shift could also be enough to make the learned movement fail. I tested this on a simplified lab task: picking up a test tube and inserting it into a rack slot.
 
 I fine-tuned SmolVLA-450M \parencite{shukor2025smolvla}, a compact open-source VLA designed for local inference, on an SO-101 6-axis robotic arm. The task was pipe-in-hole, used here as a simplified stand-in for tube-transfer operations on OT-2-style equipment. I then measured how the trained policy behaved under controlled changes to the object starting position, ambient lighting, and overhead-camera viewpoint.
 
 Research question: Under a fixed two-camera SO-101 setup and 50 final training demonstrations, how does SmolVLA-450M performance on a tube-in-hole task change between training-matched conditions, unseen tube starting positions, altered lighting, and a displaced overhead camera?
 
-I address this through four experiments: a baseline under training-matched conditions (Section~\ref{sec:baseline}), a perturbation of object starting position (Section~\ref{sec:pos}), a lighting perturbation (Section~\ref{sec:lighting}), and a camera-viewpoint perturbation (Section~\ref{sec:camerapos}). Together these experiments define the scope under which the system can and cannot be considered reliable.
+I answer this with four experiments: a baseline under training-matched conditions (Section~\ref{sec:baseline}), a change in object starting position (Section~\ref{sec:pos}), a lighting change (Section~\ref{sec:lighting}), and a camera-viewpoint change (Section~\ref{sec:camerapos}). Together, these tests show where the current setup works and where it breaks.
 
 The remainder of the report is organised as follows. Section~\ref{sec:background} reviews robotic laboratories, imitation learning, and VLA control. Section~\ref{sec:setup} describes the hardware, task, data collection, training, and inference procedure. Section~\ref{sec:results} reports the four experiments. Section~\ref{sec:discussion} analyses the observed failure modes, and Section~\ref{sec:limitations} discusses limitations and future work. Section~\ref{sec:conclusion} concludes.
 
-%% ----------------------------------------------------------------
+% Section
 \section{Background}
 \label{sec:background}
-%% ----------------------------------------------------------------
+% Section
 
 \subsection{Robotic Laboratories and Low-Level Manipulation}
 
-Self-driving laboratories combine automated experimental hardware with software that plans, executes, and updates experiments from data \parencite{tom2024selfdriving}. Examples include autonomous materials discovery platforms \parencite{macleod2020selfdriving} and mobile robotic chemistry systems that move between laboratory instruments \parencite{burger2020mobile}. These systems show that automation can accelerate experimentation, but they also highlight a practical bottleneck: the robot still has to interact reliably with physical objects, tools, vials, plates, and instruments.
+Self-driving laboratories combine automated hardware with software that chooses and updates experiments from data \parencite{tom2024selfdriving}. Examples include autonomous materials platforms \parencite{macleod2020selfdriving} and mobile robotic chemistry systems that move between lab instruments \parencite{burger2020mobile}. These systems are impressive, but they also show a practical bottleneck: the robot still has to handle real objects such as tools, vials, plates, and instruments.
 
-Many current laboratory robots solve this by avoiding perception at the manipulation level. Deck-based robots such as the OT-2 work well because each object location is calibrated in advance \parencite{bolt2025platehandler}. This is appropriate for pipetting and fixed consumable layouts, but it does not directly solve manipulation when an object is slightly misplaced. The present project focuses on that low-level gap. It does not attempt to build a full self-driving laboratory. Instead, it asks whether a learned visuomotor policy can make one simple tube-transfer movement less dependent on fixed coordinates.
+Many current laboratory robots avoid this problem by using fixed deck positions. The OT-2 works well because each object location is calibrated in advance \parencite{bolt2025platehandler}. That is enough for pipetting and fixed consumable layouts, but it does not solve the case where an object is slightly misplaced. This project focuses on that smaller problem. It does not try to build a full self-driving laboratory. It only asks whether a learned visuomotor policy can make one tube-transfer movement less dependent on fixed coordinates.
 
 \subsection{Imitation Learning and VLA Control}
 
-Imitation learning trains a policy from expert demonstrations rather than from hand-written control rules \parencite{hussein2017imitation}. This is attractive for small manipulation tasks because a human can show the movement directly with teleoperation. A central limitation is distribution shift: once the learned policy makes a small mistake, it may enter states that were rare or absent in the demonstrations, causing errors to compound \parencite{ross2011dagger}. For this reason, the diversity of demonstrations is not a detail but a core part of the method.
+Imitation learning trains a policy from expert demonstrations rather than from hand-written control rules \parencite{hussein2017imitation}. It is useful for small manipulation tasks because a human can show the movement directly with teleoperation. The downside is distribution shift: once the learned policy makes a small mistake, it may enter states that were rare or absent in the demonstrations, and errors can build up from there \parencite{ross2011dagger}. For this reason, the diversity of demonstrations is not just a detail. It is part of the method.
 
-Vision-Language-Action models extend this idea by conditioning the action policy on both images and language. RT-1 used image observations and task instructions to predict real-robot actions at scale \parencite{brohan2023rt1}. RT-2 then framed this as a VLA problem by connecting vision-language pretraining with robot action prediction \parencite{zitkovich2023rt2}. SmolVLA follows the same broad direction in a smaller open-source model intended to be practical for lower-cost robotics setups \parencite{shukor2025smolvla}.
+Vision-Language-Action models extend this idea by conditioning the action policy on both images and language. RT-1 used image observations and task instructions to predict real-robot actions at scale \parencite{brohan2023rt1}. RT-2 connected vision-language pretraining with robot action prediction \parencite{zitkovich2023rt2}. SmolVLA follows the same general direction, but in a smaller open-source model intended for lower-cost robotics setups \parencite{shukor2025smolvla}.
 
-In this project, the VLA receives two RGB image streams, the current robot state, and the fixed task label \texttt{"Pipe in hole"}. The language input should therefore be understood as task conditioning, not as free-form conversation. The model is not asked to interpret a laboratory protocol or reason about chemistry. It is asked to execute one learned motor behaviour when the same task label is supplied.
+In this project, the VLA receives two RGB image streams, the current robot state, and the fixed task label \texttt{"Pipe in hole"}. I use the language input as task conditioning, not as free-form conversation. The model is not asked to interpret a laboratory protocol or reason about chemistry. It is only asked to execute one learned motor behaviour when the same task label is supplied.
 
 Image understanding in VLA systems is also different from text-only language modelling. The model needs a vision encoder and projection layers that convert images into representations that can be combined with the language/task input and then mapped to robot actions \parencite{shukor2025smolvla, zitkovich2023rt2}. This matters for the present experiments because changes in object position and camera viewpoint directly change the visual representation on which the policy depends.
 
@@ -100,10 +100,10 @@ SmolVLA-450M \parencite{shukor2025smolvla} is an open-source VLA model developed
 
 The key advantage is that it predicts chunks of future actions, about 50 timesteps, rather than single actions. This makes robot movements smoother because the policy does not need to decide every motor command independently. For this project, the main constraint was inference. Training could run on the A100 cluster, but deployment had to run beside the robot on my MacBook M1 Pro. The cluster would only solve this bottleneck if I had a low-latency inference tunnel working: the MacBook would send RGB images and joint positions to the cluster, and the cluster would send back the next motor command in time. I did not get that tunnel working, so the model still had to be small enough for local inference.
 
-%% ----------------------------------------------------------------
+% Section
 \section{Experimental Setup}
 \label{sec:setup}
-%% ----------------------------------------------------------------
+% Section
 
 \subsection{Hardware}
 
@@ -237,7 +237,7 @@ I logged training to Weights \& Biases; the individual metric curves are reprodu
 
 \subsection{Inference and Reproducibility Artefacts}
 
-Inference ran on the MacBook next to the robot. The trained model was downloaded from Hugging Face, two configuration fields that pointed to the original training environment were removed, and the same LeRobot recording script was used with \texttt{--policy.path} set to the local model directory. During evaluation, the dataset output was local only and was not pushed to Hugging Face.
+Inference ran on the MacBook next to the robot. The trained model was downloaded from Hugging Face, two configuration fields that pointed to the original training environment were removed, and the same LeRobot recording script was used with \texttt{-{}-policy.path} set to the local model directory. During evaluation, the dataset output was local only and was not pushed to Hugging Face.
 
 The private GitHub repository contains the report source and the runnable scripts needed by future students:
 
@@ -260,10 +260,10 @@ The private GitHub repository contains the report source and the runnable script
 \label{tab:repo-scripts}
 \end{table}
 
-%% ----------------------------------------------------------------
+% Section
 \section{Results}
 \label{sec:results}
-%% ----------------------------------------------------------------
+% Section
 
 I tested the model on the MacBook M1 Pro. Each condition used 10 trials. A trial counted as successful only if the tube was fully inserted into the target hole without manual correction.
 
@@ -304,14 +304,14 @@ I tested what happens when the tube starts in positions absent from the final tr
 
 Accuracy dropped to 5 out of 10. The arm often reached toward the area where the tube usually appeared during training, even when I placed it somewhere else. This does not mean the model learned nothing about the tube; it more likely learned a mix of tube recognition and a strong bias toward familiar image locations.
 
-The model therefore struggled with spatial generalisation. The final 50 training episodes did not cover enough different regions of the rack, so the action policy stayed too closely tied to the positions it had seen. Section~\ref{sec:coverage} discusses this limitation.
+In practice, the model struggled with spatial generalisation. The final 50 training episodes did not cover enough different regions of the rack, so the action policy stayed too closely tied to the positions it had seen. Section~\ref{sec:coverage} discusses this limitation.
 
 \subsection{Robustness to Lighting Changes}
 \label{sec:lighting}
 
 I tested lighting changes by switching lamps on and off and moving light sources around the workspace. Lighting did not strongly affect performance as long as the tube and rack remained clearly visible in both camera streams. When lighting became poor enough to make the camera display difficult for a human operator to interpret, the model also became unreliable.
 
-This result is limited because I did not measure illumination in lux or fix the lamp positions quantitatively. The most defensible conclusion is therefore narrow: moderate visible lighting changes were less damaging than changes in object position or camera viewpoint in this setup. A future laboratory evaluation should use documented LED settings or a light booth so that lighting can be reproduced.
+This result is limited because I did not measure illumination in lux or fix the lamp positions quantitatively. I would not claim full lighting robustness from this test. The narrower result is that moderate visible lighting changes were less damaging than changes in object position or camera viewpoint in this setup. A future laboratory evaluation should use documented LED settings or a light booth so that lighting can be reproduced.
 
 \subsection{Sensitivity to Camera Position}
 \label{sec:camerapos}
@@ -327,10 +327,10 @@ I moved the overhead camera by a small amount, approximately a few centimetres a
 
 This result shows that the trained policy was strongly viewpoint-dependent. In a controlled deployment this may be acceptable if the camera is rigidly mounted before data collection and left fixed during use. In a shared laboratory, however, camera displacement is a realistic failure mode because other users may move equipment, clean the bench, or reconfigure the workspace.
 
-%% ----------------------------------------------------------------
+% Section
 \section{Analysis and Deployment Implications}
 \label{sec:discussion}
-%% ----------------------------------------------------------------
+% Section
 
 \subsection{Dataset Coverage and Spatial Generalisation}
 \label{sec:coverage}
@@ -339,7 +339,7 @@ The main failure in this project was not baseline execution. Under matched condi
 
 The drop from 9/10 to 5/10 when the tube started in unseen positions suggests that the model learned a mixture of tube recognition and familiar image-location priors. This does not prove that it memorised pixels only. A more cautious interpretation is that the final dataset did not force the policy to separate "what the tube looks like" from "where the tube usually appears in this camera view."
 
-Large VLA work argues that generalisation improves with more data diversity, larger models, and broader task coverage \parencite{brohan2023rt1, zitkovich2023rt2}. At the same time, small fine-tuned models can still suffer interference between behaviours when tasks or contexts are added without enough balanced data. Recent continual-learning work on VLA models suggests that forgetting and interference depend on model size, pretraining, replay, adapters, and data balance rather than on a simple fixed number of tasks \parencite{liu2026forgetting, romer2026clare}. For this report, the safest conclusion is therefore practical rather than theoretical: the final training set covered the demonstrated start region well enough for baseline success, but not enough for reliable position generalisation.
+Larger VLA work shows that more data diversity, larger models, and broader task coverage can improve generalisation \parencite{brohan2023rt1, zitkovich2023rt2}. At the same time, small fine-tuned models can still suffer interference between behaviours when tasks or contexts are added without enough balanced data. Recent continual-learning work on VLA models suggests that forgetting and interference depend on model size, pretraining, replay, adapters, and data balance rather than on a simple fixed number of tasks \parencite{liu2026forgetting, romer2026clare}. For my results, the practical interpretation is simple: the final training set covered the demonstrated start region well enough for baseline success, but not enough for reliable position generalisation.
 
 \begin{table}[H]
 \centering
@@ -356,7 +356,7 @@ Model capacity & No fixed task limit is supported by the cited literature. Capac
 \label{tab:coverage-analysis}
 \end{table}
 
-Two concrete improvements follow from this analysis. First, I would collect more demonstrations from clearly different rack regions and assign prompts that describe those regions, such as \texttt{"Pipe in hole from left slot"}, \texttt{"Pipe in hole from centre slot"}, and \texttt{"Pipe in hole from right slot"}. This uses language conditioning to mark different contexts while keeping the overall task the same. Second, I would add image augmentation during training, such as random crops, small zooms, and colour shifts, to reduce dependence on exact pixel locations.
+For my setup, I would try two fixes first. The first is to collect more demonstrations from different rack regions and assign prompts that describe those regions, such as \texttt{"Pipe in hole from left slot"}, \texttt{"Pipe in hole from centre slot"}, and \texttt{"Pipe in hole from right slot"}. This uses language conditioning to mark different contexts while keeping the overall task the same. The second is to add image augmentation during training, such as random crops, small zooms, and colour shifts, to reduce dependence on exact pixel locations.
 
 \subsection{Gripper Design as a Confound}
 \label{sec:gripper}
@@ -383,20 +383,20 @@ This gripper design is a problem because the tube slips or rotates when grabbed.
 
 \subsection{Why These Failure Modes Matter for Laboratory Use}
 
-The perturbations are relevant only under a specific deployment assumption. If the robot is installed in a closed, calibrated cell where cameras, lights, and objects are fixed, then the camera-displacement and lighting tests are less central. Under that assumption, the baseline result is the most relevant finding: the system can perform the trained movement when the scene is reproduced.
+These tests matter differently depending on the deployment setting. If the robot is installed in a closed, calibrated cell where cameras, lights, and objects are fixed, then the camera-displacement and lighting tests are less central. In that case, the baseline result is the most relevant finding: the system can perform the trained movement when the scene is reproduced.
 
-For a shared chemistry lab, the perturbations matter more. Users may move a camera mount, shift a rack during cleaning, change lighting, or reset a tube by hand in a slightly different location. The results indicate that the model can tolerate some lighting variation, but it cannot be trusted after camera movement and it is only partly robust to unseen object starts. For practical deployment, these findings translate into three requirements: rigid camera mounting before data collection, broader prompted demonstrations across the working envelope, and a gripper that holds cylindrical tubes consistently.
+For a shared chemistry lab, the perturbations matter more. Users may move a camera mount, shift a rack during cleaning, change lighting, or reset a tube by hand in a slightly different location. The results indicate that the model can tolerate some lighting variation, but it cannot be trusted after camera movement and it is only partly robust to unseen object starts. For my setup, that means three things are needed before deployment: rigid camera mounting before data collection, broader prompted demonstrations across the working envelope, and a gripper that holds cylindrical tubes consistently.
 
-%% ----------------------------------------------------------------
+% Section
 \section{Limitations and Future Work}
 \label{sec:limitations}
-%% ----------------------------------------------------------------
+% Section
 
 \subsection{Limitations}
 
 The first limitation is dataset coverage. The final 50 demonstrations were sufficient for the training-matched baseline, but they did not cover enough tube start positions to support reliable spatial generalisation. The more than 300 total recordings helped refine the setup, but only the final 50 episodes formed the dataset used for training.
 
-The second limitation is measurement precision. The lighting and camera-displacement tests were useful as stress tests, but they were not measured with laboratory instruments. Lighting was not recorded in lux, lamp positions were not fixed numerically, and the camera displacement was described only approximately. These results are therefore qualitative indicators of sensitivity rather than calibrated robustness measurements.
+The second limitation is measurement precision. The lighting and camera-displacement tests were useful as stress tests, but they were not measured with laboratory instruments. Lighting was not recorded in lux, lamp positions were not fixed numerically, and the camera displacement was described only approximately. I treat these results as qualitative indicators of sensitivity rather than calibrated robustness measurements.
 
 The third limitation is the gripper. The angular gripper caused tube slip and rotation, which makes failures harder to interpret. A failed trial could reflect a perception or policy error, but it could also reflect unstable contact between the gripper and the tube.
 
@@ -420,22 +420,22 @@ The most direct next step is a more controlled and reproducible data-collection 
 
 For a full laboratory system, the VLA should be treated as a low-level execution policy rather than as the complete automation system. A separate scheduler or protocol-level controller would still be needed to decide which lab action should happen next, check whether the workspace is safe, and decide how to recover from failures. The VLA would then execute bounded skills such as tube transfer, while the higher-level controller would handle the experimental protocol.
 
-%% ----------------------------------------------------------------
+% Section
 \section{Conclusion}
 \label{sec:conclusion}
-%% ----------------------------------------------------------------
+% Section
 
-This project asked how SmolVLA-450M performance on a tube-in-hole task changes between training-matched conditions, unseen tube starting positions, altered lighting, and a displaced overhead camera. The answer is scope-dependent. Under training-matched conditions, the policy was reliable in this setup, succeeding in 9 out of 10 trials. With unseen tube starting positions, success fell to 5 out of 10, indicating limited spatial generalisation from the final 50 demonstrations. Moderate visible lighting changes were less damaging, but this result should be treated cautiously because lighting was not measured quantitatively. A small overhead-camera displacement caused complete failure.
+This project asked how SmolVLA-450M performance on a tube-in-hole task changes between training-matched conditions, unseen tube starting positions, altered lighting, and a displaced overhead camera. In my setup, the model worked well only when the scene stayed close to the training setup. Under training-matched conditions, it succeeded in 9 out of 10 trials. With unseen tube starting positions, success fell to 5 out of 10, which shows limited spatial generalisation from the final 50 demonstrations. Moderate visible lighting changes were less damaging, but I would treat that result carefully because lighting was not measured quantitatively. A small overhead-camera displacement caused complete failure.
 
-The practical conclusion is that compact VLA control can perform a simple lab-relevant manipulation when the physical scene is reproduced closely, but it is not yet robust enough for an unconstrained shared-lab environment. For future use, the most important improvements are rigid camera mounting, broader prompted demonstrations across the working area, measured lighting conditions, and a parallel gripper that can hold cylindrical tubes consistently. These changes would make the method more reproducible and would separate policy failures from avoidable hardware and setup failures.
+The main takeaway is that compact VLA control can perform a simple lab-relevant manipulation when the physical scene is reproduced closely, but this version is not ready for a busy shared-lab environment. The next version should use rigid camera mounting, broader prompted demonstrations across the working area, measured lighting conditions, and a parallel gripper that can hold cylindrical tubes consistently. These changes would make the method easier to reproduce and would separate actual policy failures from avoidable setup and hardware failures.
 
 \printbibliography
 
-%% ----------------------------------------------------------------
+% Section
 \appendix
 \section{Training Curves}
 \label{app:training}
-%% ----------------------------------------------------------------
+% Section
 
 This appendix reproduces the individual training metrics from the Weights \& Biases dashboard, summarised in Section~\ref{sec:training}. The final training run was launched on a compute node with four NVIDIA A100 40\,GB GPUs, with the process using one GPU.
 
