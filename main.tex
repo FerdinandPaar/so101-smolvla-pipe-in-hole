@@ -21,17 +21,12 @@
 
 % Hyperlinks
 \usepackage[hidelinks]{hyperref}
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    filecolor=blue,
-    urlcolor=blue,
-    citecolor=blue
-}
+\def\UrlBreaks{\do\/\do-\do\.\do\_}
 
 % Bibliography
-\usepackage[style=apa, backend=biber]{biblatex}
+\usepackage[style=apa, backend=biber, doi=true, url=true, isbn=false, eprint=false]{biblatex}
 \DeclareLanguageMapping{english}{english-apa}
+\DeclareFieldFormat{doi}{\newline\href{https://doi.org/#1}{https://doi.org/#1}\nopunct}
 \addbibresource{references.bib}
 
 \title{Vision-Language-Action Models for Chemical Manipulation:\\
@@ -349,7 +344,7 @@ To fix this, I would collect 150-200 better planned episodes from a wider range 
 
 \subsection{Bigger Models}
 
-SmolVLA was the right choice for this project because inference had to run on my MacBook. But for a real lab with GPUs, a larger NVIDIA GR00T model would be worth testing \parencite{nvidia2026groot}. The trade-off is that inference would need to run on a GPU workstation, Jetson, or cluster-connected setup, not only on the MacBook. The good news is that both model families use robot demonstration data in a similar format, so the final 50 episodes could still be useful as a starting point.
+SmolVLA was the right choice for this project because inference had to run on my MacBook. But for a real lab with GPUs, a larger NVIDIA GR00T model would be worth testing \parencite{bjorck2025groot}. The trade-off is that inference would need to run on a GPU workstation, Jetson, or cluster-connected setup, not only on the MacBook. The good news is that both model families use robot demonstration data in a similar format, so the final 50 episodes could still be useful as a starting point.
 
 \subsection{Roadmap to Deployment}
 
@@ -371,7 +366,7 @@ With these changes, you'd have a real lab-deployment setup with robust perceptio
 
 \subsection{The Orchestrator Pattern: Beyond Single-Task VLAs}
 
-One useful insight from recent work \parencite{ruiz2026toddler} is that VLAs are not general world models. They are fundamentally imitation-learning policies conditioned on task names. The practical setup is to combine a VLA with an orchestrator model that monitors the environment and decides which VLA action to invoke.
+One useful design pattern is to treat VLAs as execution policies rather than general world models. They are fundamentally imitation-learning policies conditioned on task names. The practical setup is to combine a VLA with an orchestrator model that monitors the environment and decides which VLA action to invoke.
 
 In that work, Gemini 3 Flash acted as the orchestrator: it tracked the game state, counted pieces, detected when wildcard die faces were rolled, and strategically commanded the VLA to execute the right motor primitives. The VLA (SmolVLA on an SO-101) did not need to understand game rules or strategy. It only needed to execute well-defined motor behaviors when told.
 
