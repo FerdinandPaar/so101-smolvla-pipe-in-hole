@@ -35,7 +35,7 @@
 \addbibresource{references.bib}
 
 \title{Vision-Language-Action Models for Chemical Manipulation:\\
-An Empirical Study with SmolVLA on the SO-101 Robotic Arm}
+A Practical Study with SmolVLA on the SO-101 Robotic Arm}
 \author{
     Ferdinand Paar \\[4pt]
     \small Student Nr.: s1128559 \quad Course: BKI209 (6 EC) \\
@@ -67,7 +67,7 @@ An alternative is to let the robot perceive its workspace and react to it, rathe
 
 Whether that promise holds for a realistic lab task, on affordable hardware, is far from obvious. Compact VLAs are trained on a limited number of demonstrations and may simply memorise the scenes they were shown rather than learn to locate objects. If so, the very brittleness we hoped to remove would reappear in a different form, as sensitivity to object position, lighting, or camera placement. Establishing which of these perturbations a small VLA can absorb, and which break it, is therefore a prerequisite for judging whether VLAs are a viable path toward flexible lab automation.
 
-This project investigates that question empirically. I fine-tuned SmolVLA-450M \parencite{shukor2025smolvla}, a compact open-source VLA designed to run on consumer hardware, on an SO-101 home-lab arm, a low-cost 6-axis robotic arm for imitation-learning research. The task was pipe-in-hole: picking up a test tube and inserting it into a rack slot as a simplified stand-in for the tube-transfer steps performed on OT-2-style equipment. I then measured how its performance changed under the kinds of perturbation a real lab introduces.
+This project tests that question in a practical setup. I fine-tuned SmolVLA-450M \parencite{shukor2025smolvla}, a compact open-source VLA designed to run on consumer hardware, on an SO-101 home-lab arm, a low-cost 6-axis robotic arm for imitation-learning research. The task was pipe-in-hole: picking up a test tube and inserting it into a rack slot as a simplified stand-in for the tube-transfer steps performed on OT-2-style equipment. I then measured how its performance changed under the kinds of perturbation a real lab introduces.
 
 Research question: Can a compact VLA (SmolVLA-450M), fine-tuned on 50 demonstrations, keep reliable pipe-in-hole performance when object position, lighting, and camera viewpoint change in ways typical of a shared chemistry lab?
 

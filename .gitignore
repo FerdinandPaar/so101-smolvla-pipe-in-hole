@@ -1,5 +1,6 @@
 # LaTeX build artifacts
 *.aux
+*.bbl
 *.bcf
 *.blg
 *.log
@@ -17,8 +18,14 @@ wandb/
 *.mp4
 *.parquet
 
+# Local machine overrides
+imitation/config.sh
+*.env
+
 # Editor and workspace artifacts
 .DS_Store
+__pycache__/
+*.pyc
 .obsidian/
 .vscode/
 .idea/

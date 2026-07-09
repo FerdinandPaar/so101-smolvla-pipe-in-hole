@@ -1,0 +1,53 @@
+# Copy this file to imitation/config.sh and edit values for the local machine.
+
+# Path to a LeRobot checkout. If you run scripts from inside the LeRobot repo,
+# "." is enough. From this standalone repo, set it explicitly.
+LEROBOT_ROOT="/Users/ferdinandpaar/lerobot"
+PYTHON="python"
+
+# SO-101 robot and leader arm.
+ROBOT_TYPE="so101_follower"
+ROBOT_PORT="/dev/tty.usbmodem5A7C1223701"
+ROBOT_ID="ferdis_awesome_follower_arm"
+TELEOP_TYPE="so101_leader"
+TELEOP_PORT="/dev/tty.usbmodem5A7C1184361"
+TELEOP_ID="ferdis_awesome_leader_arm"
+
+# Camera layout used while recording demonstrations.
+ROBOT_CAMERAS_RECORD='{"front": {"type": "opencv", "index_or_path": 1, "width": 640, "height": 480, "fps": 30, "rotation": 0}, "side": {"type": "opencv", "index_or_path": 0, "width": 640, "height": 480, "fps": 30, "rotation": 0}}'
+
+# Camera layout used at inference. These names match the trained policy config.
+ROBOT_CAMERAS_INFERENCE='{"camera1": {"type": "opencv", "index_or_path": 1, "width": 640, "height": 480, "fps": 30}, "camera2": {"type": "opencv", "index_or_path": 0, "width": 640, "height": 480, "fps": 30}}'
+
+# Dataset and model repositories.
+DATASET_REPO_ID="mundgelenk/so101_50_pipe_in_hole"
+MODEL_REPO_ID="mundgelenk/smolvla_so101_pipe_in_hole"
+BASE_POLICY="lerobot/smolvla_base"
+TASK_NAME="Pipe in hole"
+
+# Recording.
+NUM_EPISODES="50"
+DATASET_ROOT="data/so101_50_pipe_in_hole"
+PUSH_DATASET_TO_HUB="true"
+DISPLAY_DATA="true"
+
+# Training.
+CUDA_VISIBLE_DEVICES="0"
+JOB_NAME="smolvla_pipe_in_hole"
+OUTPUT_DIR="outputs/train/smolvla_pipe_in_hole"
+BATCH_SIZE="16"
+STEPS="30000"
+SAVE_FREQ="2500"
+USE_AMP="true"
+EMPTY_CAMERAS="1"
+WANDB_ENABLE="true"
+WANDB_ENTITY=""
+WANDB_PROJECT="lerobot-smolvla"
+RENAME_MAP='{"observation.images.front": "observation.images.camera1", "observation.images.side": "observation.images.camera2"}'
+
+# Inference and evaluation.
+MODEL_LOCAL_DIR="my_models/smolvla_pipe_in_hole"
+EVAL_EPISODES="10"
+EPISODE_TIME_S="30"
+RESET_TIME_S="20"
+PUSH_EVAL_TO_HUB="false"

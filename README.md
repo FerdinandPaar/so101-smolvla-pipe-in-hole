@@ -1,6 +1,6 @@
 # SO-101 SmolVLA Pipe-in-Hole
 
-This repository contains the report source and the minimal project files for a SmolVLA fine-tuning experiment on an SO-101 robot arm. The task was to pick up a test tube and place it into a target hole.
+This repository contains the imitation-learning scripts, report source, and minimal project files for a SmolVLA fine-tuning experiment on an SO-101 robot arm. The task was to pick up a test tube and place it into a target hole.
 
 ## Links
 
@@ -13,18 +13,58 @@ This repository contains the report source and the minimal project files for a S
 - `main.tex`: LaTeX report source.
 - `references.bib`: APA-style bibliography entries.
 - `main.pdf`: Compiled report.
+- `imitation/`: Runnable scripts for teleoperation, data collection, training, model download, and inference.
 - `images/`: Only the images referenced by the report.
 
 Generated LaTeX files, local model downloads, local datasets, full LeRobot source files, and workspace/editor artifacts are intentionally not included.
 
-## Setup
+## Imitation Code
 
-Run these commands from a working LeRobot checkout with the SO-101 hardware connected.
+The runnable project code is in `imitation/`. The scripts call a local LeRobot checkout and keep all machine-specific settings in one config file.
 
 ```bash
-cd lerobot
-conda activate lerobot
+cp imitation/config.sh.example imitation/config.sh
 ```
+
+Edit `imitation/config.sh` if the LeRobot checkout path, robot ports, camera indices, Hugging Face repo IDs, or W&B settings differ on the local machine.
+
+Run scripts from this repository after activating the environment used for LeRobot:
+
+```bash
+conda activate lerobot
+./imitation/teleoperate.sh
+./imitation/record_dataset.sh
+./imitation/resume_recording.sh
+```
+
+Training and inference:
+
+```bash
+conda activate smolvla
+./imitation/train_smolvla.sh
+
+conda activate lerobot
+./imitation/download_model.sh
+./imitation/run_inference.sh
+./imitation/eval_10_runs.sh
+```
+
+Script map:
+
+| Script | Purpose |
+| --- | --- |
+| `imitation/teleoperate.sh` | Check robot, leader arm, cameras, and lighting. |
+| `imitation/record_dataset.sh` | Record the final imitation-learning episodes and push the dataset. |
+| `imitation/resume_recording.sh` | Continue a partially recorded dataset. |
+| `imitation/train_smolvla.sh` | Fine-tune SmolVLA on the recorded dataset. |
+| `imitation/download_model.sh` | Download the trained model and clean its config for local inference. |
+| `imitation/run_inference.sh` | Run policy inference beside the robot. |
+| `imitation/eval_10_runs.sh` | Run the 10-episode evaluation setting used in the report. |
+| `imitation/clean_model_config.py` | Helper used by `download_model.sh`. |
+
+## Setup Notes
+
+The commands below are the expanded versions of the script calls for reference. Run them from a working LeRobot checkout with the SO-101 hardware connected.
 
 ## Teleoperation Check
 
