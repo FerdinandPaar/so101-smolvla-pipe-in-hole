@@ -797,7 +797,7 @@
           <div class="highlight-item">
             <h3>A VLA learns from demonstrations, not coordinates</h3>
             <p>
-              Instead of programming each waypoint, the operator records teleoperated episodes and the policy imitates them &mdash; which means the policy inherits whatever the demonstrations did and did not cover.
+              Instead of programming each waypoint, the operator records teleoperated episodes and the policy imitates them, which means the policy inherits whatever the demonstrations did and did not cover.
             </p>
           </div>
 
@@ -811,7 +811,7 @@
           <div class="highlight-item">
             <h3>The interesting question is robustness</h3>
             <p>
-              Not whether the arm can perform the motion once, but whether it still works when the tube moves, the lights change, or someone bumps the camera &mdash; the ordinary events of a shared lab.
+              Not whether the arm can perform the motion once, but whether it still works when the tube moves, the lights change, or someone bumps the camera, the ordinary events of a shared lab.
             </p>
           </div>
         </div>
@@ -826,7 +826,7 @@
         </h2>
 
         <p class="lead">
-          The SO-101 is an open-source 6-axis arm for imitation-learning research: a passive leader arm moved by hand, an active follower arm that mirrors it, Feetech STS3215 servos with magnetic absolute encoders, and two cameras &mdash; one fixed overhead, one wrist-mounted &mdash; providing the two visual streams SmolVLA requires.
+          The SO-101 is an open-source 6-axis arm for imitation-learning research: a passive leader arm moved by hand, an active follower arm that mirrors it, Feetech STS3215 servos with magnetic absolute encoders, and two cameras (one fixed overhead, one wrist-mounted) providing the two visual streams SmolVLA requires.
         </p>
 
         <div class="figure-row">
@@ -921,7 +921,7 @@
           <div class="figure-box">
             <img src="images/starting_position.png" alt="Rack slots absent from the training data marked in yellow">
             <div class="figure-caption">
-              Yellow fields mark tube starting positions absent from the training data. Placing the tube there dropped success from 9/10 to 5/10 &mdash; the arm often reached toward the region where the tube usually appeared during training.
+              Yellow fields mark tube starting positions absent from the training data. Placing the tube there dropped success from 9/10 to 5/10. The arm often reached toward the region where the tube usually appeared during training.
             </div>
           </div>
 
@@ -1036,7 +1036,7 @@
           </h2>
 
           <p class="desc-text">
-            The SO-101's angular (scissor) gripper pivots its fingers around a pin. On a cylindrical tube that means a single line of contact instead of an even squeeze &mdash; so a failed trial may reflect a policy error, or merely unstable contact.
+            The SO-101's angular (scissor) gripper pivots its fingers around a pin. On a cylindrical tube that means a single line of contact instead of an even squeeze, so a failed trial may reflect a policy error, or merely unstable contact.
           </p>
 
           <div class="table-wrap">
@@ -1102,7 +1102,7 @@
         </h2>
 
         <p class="abstract-text">
-          Compact VLA control can perform a simple lab-relevant manipulation when the physical scene is reproduced closely: 9 out of 10 under training-matched conditions. But success fell to 5 out of 10 from unseen tube positions and to zero after a small camera shift, so this version is not ready for a busy shared lab. The next version needs rigid camera mounting, broader prompted demonstrations across the working area, measured lighting, and a parallel gripper that holds cylindrical tubes consistently &mdash; changes that would also separate genuine policy failures from avoidable setup and hardware ones.
+          Compact VLA control can perform a simple lab-relevant manipulation when the physical scene is reproduced closely: 9 out of 10 under training-matched conditions. But success fell to 5 out of 10 from unseen tube positions and to zero after a small camera shift, so this version is not ready for a busy shared lab. The next version needs rigid camera mounting, broader prompted demonstrations across the working area, measured lighting, and a parallel gripper that holds cylindrical tubes consistently. These changes would also separate genuine policy failures from avoidable setup and hardware ones.
         </p>
       </div>
     </section>
