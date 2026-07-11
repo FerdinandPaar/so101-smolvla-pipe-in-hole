@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmolVLA on the SO-101: A Practical Study of Vision-Language-Action Models for Chemical Manipulation</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    :root {
+      --bg: #070b18;
+      --card: rgba(255, 255, 255, 0.085);
+      --text: #f8fafc;
+      --muted: #b8c2d8;
+      --line: rgba(255, 255, 255, 0.13);
+      --cyan: #22d3ee;
+      --blue: #60a5fa;
+      --violet: #a78bfa;
+      --pink: #f472b6;
+      --green: #34d399;
+      --orange: #fb923c;
+      --red: #f87171;
+      --shadow: 0 30px 100px rgba(0, 0, 0, 0.35);
+      --radius: 26px;
+      --maxw: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(96, 165, 250, 0.24), transparent 28%),
+        radial-gradient(circle at 85% 5%, rgba(244, 114, 182, 0.18), transparent 24%),
+        radial-gradient(circle at 50% 45%, rgba(34, 211, 238, 0.10), transparent 32%),
+        linear-gradient(180deg, #070b18 0%, #0b1020 46%, #090d19 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at center, black 0%, transparent 82%);
+      z-index: -1;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+
+    .container {
+      width: min(var(--maxw), calc(100% - 34px));
+      margin: 0 auto;
+    }
+
+    .hero { padding: 56px 0 30px; }
+
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.055)),
+        radial-gradient(circle at 20% 15%, rgba(34, 211, 238, 0.18), transparent 32%),
+        radial-gradient(circle at 82% 30%, rgba(167, 139, 250, 0.18), transparent 34%);
+      backdrop-filter: blur(22px);
+      box-shadow: var(--shadow);
+      padding: 54px 34px 34px;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -140px -140px auto;
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(244,114,182,0.22), transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 15px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #e0f2fe;
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      background: rgba(34, 211, 238, 0.10);
+      border-radius: 999px;
+      margin-bottom: 20px;
+    }
+
+    .title {
+      margin: 0 auto;
+      max-width: 1040px;
+      font-size: clamp(2.25rem, 5vw, 5.15rem);
+      line-height: 0.98;
+      font-weight: 900;
+      letter-spacing: -0.065em;
+    }
+
+    .title span {
+      background: linear-gradient(90deg, #ffffff, #bae6fd, #ddd6fe, #fbcfe8);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .subtitle {
+      margin: 22px auto 0;
+      max-width: 850px;
+      font-size: 1.12rem;
+      line-height: 1.85;
+      color: var(--muted);
+    }
+
+    .authors {
+      margin: 22px auto 0;
+      color: #dbeafe;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 1.7;
+    }
+
+    .authors small {
+      display: block;
+      margin-top: 6px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 13px;
+      margin-top: 30px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 19px;
+      border-radius: 999px;
+      font-size: 0.96rem;
+      font-weight: 800;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.08);
+      color: #eef6ff;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(34, 211, 238, 0.42);
+      background: rgba(255,255,255,0.13);
+      box-shadow: 0 18px 42px rgba(34, 211, 238, 0.10);
+    }
+
+    .btn.primary {
+      border: none;
+      background: linear-gradient(135deg, var(--cyan), var(--blue), var(--violet));
+      color: #06111f;
+    }
+
+    .stats-strip {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 34px;
+    }
+
+    .stat {
+      padding: 18px 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.075);
+      text-align: left;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.6rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: #fff;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .section { margin: 28px auto 0; }
+
+    .section-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,0.095), rgba(255,255,255,0.055));
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      padding: 30px;
+    }
+
+    .section-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at top right, rgba(96,165,250,0.12), transparent 30%);
+    }
+
+    .section-title {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin: 0 0 16px;
+      font-size: 1.65rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .icon {
+      width: 42px;
+      height: 42px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(34,211,238,0.18), rgba(167,139,250,0.18));
+      color: #bae6fd;
+      border: 1px solid rgba(255,255,255,0.12);
+      flex: 0 0 auto;
+    }
+
+    .lead, .abstract-text, .desc-text {
+      position: relative;
+      z-index: 1;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.9;
+      margin: 0;
+    }
+
+    .abstract-text { color: #d8e2f4; }
+
+    .highlight-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .highlight-item {
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.045));
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .highlight-item:hover {
+      transform: translateY(-3px);
+      border-color: rgba(34,211,238,0.32);
+      background: rgba(255,255,255,0.12);
+    }
+
+    .highlight-item h3 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .highlight-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.75;
+    }
+
+    .method-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .method-card {
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.07);
+    }
+
+    .method-card .tag {
+      display: inline-flex;
+      margin-bottom: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #0f172a;
+      background: linear-gradient(135deg, #bae6fd, #ddd6fe);
+    }
+
+    .method-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.08rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .method-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 0.95rem;
+    }
+
+    .figure-box {
+      position: relative;
+      z-index: 1;
+      margin-top: 18px;
+      overflow: hidden;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      box-shadow: 0 18px 55px rgba(0,0,0,0.22);
+    }
+
+    .figure-box img {
+      width: 100%;
+      background: #fff;
+    }
+
+    .figure-caption {
+      padding: 16px 18px 18px;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.75;
+      border-top: 1px solid var(--line);
+      background: rgba(0,0,0,0.15);
+    }
+
+    .figure-row {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .figure-row .figure-box { margin-top: 18px; }
+
+    .results-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .metric {
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.075);
+    }
+
+    .metric .name {
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .metric .value {
+      margin-top: 10px;
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      color: #fff;
+    }
+
+    .metric.good .value { color: #6ee7b7; }
+    .metric.mid .value { color: #fbbf24; }
+    .metric.bad .value { color: #fca5a5; }
+
+    .metric .note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    .table-wrap {
+      position: relative;
+      z-index: 1;
+      margin-top: 18px;
+      overflow-x: auto;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.94rem;
+      min-width: 520px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    th {
+      color: #fff;
+      font-weight: 800;
+      background: rgba(255,255,255,0.06);
+      letter-spacing: 0.02em;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    td strong { color: #fff; font-weight: 700; }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.88em;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.09);
+      color: #bae6fd;
+    }
+
+    ul.clean {
+      position: relative;
+      z-index: 1;
+      margin: 18px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 12px;
+    }
+
+    ul.clean li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 0.98rem;
+    }
+
+    ul.clean li i {
+      margin-top: 5px;
+      color: var(--cyan);
+      flex: 0 0 auto;
+    }
+
+    .video-section-wrap {
+      position: relative;
+      z-index: 1;
+      margin-top: 18px;
+    }
+
+    .swiper {
+      width: 100%;
+      padding-bottom: 12px;
+    }
+
+    .swiper-slide {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+    }
+
+    .video-shell {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255,255,255,0.075);
+      padding: 16px;
+    }
+
+    .video-frame {
+      position: relative;
+      display: block;
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+      aspect-ratio: 16 / 9;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #000;
+      border: 1px solid rgba(255,255,255,0.10);
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .video-frame.portrait {
+      max-width: 420px;
+      aspect-ratio: 9 / 16;
+    }
+
+    .video-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.82;
+      transition: opacity 0.18s ease, transform 0.35s ease;
+    }
+
+    .video-frame:hover {
+      transform: translateY(-3px);
+      border-color: rgba(34, 211, 238, 0.45);
+      box-shadow: 0 22px 55px rgba(34, 211, 238, 0.14);
+    }
+
+    .video-frame:hover img {
+      opacity: 1;
+      transform: scale(1.03);
+    }
+
+    .play-overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(7,11,24,0.10), rgba(7,11,24,0.55));
+    }
+
+    .play-button {
+      display: grid;
+      place-items: center;
+      width: 74px;
+      height: 74px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue), var(--violet));
+      color: #06111f;
+      font-size: 26px;
+      padding-left: 5px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.42);
+      transition: transform 0.18s ease;
+    }
+
+    .video-frame:hover .play-button { transform: scale(1.09); }
+
+    .watch-label {
+      position: absolute;
+      left: 16px;
+      bottom: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 13px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #eef6ff;
+      background: rgba(7, 11, 24, 0.72);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+
+    .watch-label i { color: #f87171; }
+
+    .video-caption {
+      margin-top: 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: #e0f2fe;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid var(--line);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+    }
+
+    .swiper-button-next::after,
+    .swiper-button-prev::after {
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .swiper-pagination-bullet {
+      background: rgba(255,255,255,0.65);
+      opacity: 0.7;
+    }
+
+    .swiper-pagination-bullet-active {
+      background: var(--cyan);
+      opacity: 1;
+    }
+
+    .footer {
+      padding: 34px 0 54px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.94rem;
+      line-height: 1.7;
+    }
+
+    .footer a {
+      color: #bae6fd;
+      font-weight: 700;
+    }
+
+    @media (max-width: 980px) {
+      .stats-strip,
+      .method-grid,
+      .results-grid,
+      .two-col,
+      .figure-row,
+      .highlight-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-card,
+      .section-card {
+        padding: 24px 18px;
+      }
+
+      .title { font-size: 2.25rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="hero">
+    <div class="container">
+      <div class="hero-card">
+        <div class="hero-top">
+          <div class="badge">
+            <i class="fa-solid fa-robot"></i>
+            SO-101 &middot; SmolVLA &middot; Project Page
+          </div>
+
+          <h1 class="title">
+            <span>Pipe in Hole</span>
+          </h1>
+
+          <p class="subtitle">
+            Vision-Language-Action Models for Chemical Manipulation: A Practical Study with SmolVLA on the SO-101 Robotic Arm
+          </p>
+
+          <p class="subtitle">
+            SmolVLA-450M fine-tuned on 50 teleoperated demonstrations of a tube-in-hole task, then stress-tested against unseen tube positions, changed lighting, and a displaced overhead camera.
+          </p>
+
+          <p class="authors">
+            Ferdinand Paar
+          </p>
+
+          <div class="button-row">
+            <a class="btn primary" href="main.pdf" target="_blank" rel="noopener">
+              <i class="fa-solid fa-file-lines"></i>
+              Report (PDF)
+            </a>
+            <a class="btn" href="https://github.com/FerdinandPaar/so101-smolvla-pipe-in-hole" target="_blank" rel="noopener">
+              <i class="fa-brands fa-github"></i>
+              Code
+            </a>
+            <a class="btn" href="https://huggingface.co/datasets/mundgelenk/so101_50_pipe_in_hole" target="_blank" rel="noopener">
+              <i class="fa-solid fa-database"></i>
+              Dataset
+            </a>
+            <a class="btn" href="https://huggingface.co/mundgelenk/smolvla_so101_pipe_in_hole" target="_blank" rel="noopener">
+              <i class="fa-solid fa-brain"></i>
+              Model
+            </a>
+            <a class="btn" href="#videos">
+              <i class="fa-solid fa-circle-play"></i>
+              Videos
+            </a>
+          </div>
+
+          <div class="stats-strip">
+            <div class="stat">
+              <strong>9 / 10</strong>
+              <span>Success under training-matched conditions</span>
+            </div>
+            <div class="stat">
+              <strong>5 / 10</strong>
+              <span>Success from tube start positions absent from training</span>
+            </div>
+            <div class="stat">
+              <strong>0 / 10</strong>
+              <span>Success after a few-centimetre overhead camera shift</span>
+            </div>
+            <div class="stat">
+              <strong>50</strong>
+              <span>Final training episodes, selected from 300+ recorded</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="section">
+      <div class="section-card">
+        <h2 class="section-title">
+          <span class="icon"><i class="fa-solid fa-scroll"></i></span>
+          Abstract
+        </h2>
+
+        <p class="abstract-text">
+          Robots such as the Opentrons OT-2 work well when the deck is calibrated and nothing moves, but small physical changes still need human correction. In this project I tested whether a compact Vision-Language-Action (VLA) model can make one simple lab-style manipulation less dependent on fixed coordinates. I fine-tuned SmolVLA-450M on an SO-101 arm for a tube-in-hole task. For the final run, I trained on 50 episodes selected after more than 300 total recorded episodes during setup and testing, and fine-tuned the model on one A100 GPU. The model succeeded in 9 out of 10 trials when the scene matched the training setup, but only 5 out of 10 trials when the tube started in positions absent from the final training set. Moderate lighting changes had limited effect, while a small overhead-camera displacement caused complete failure. The main result is that the model can do the task under tightly controlled conditions, but it depends heavily on fixed cameras, enough spatial coverage in the demonstrations, and a gripper that can hold the tube reliably.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-card">
+        <h2 class="section-title">
+          <span class="icon"><i class="fa-solid fa-circle-question"></i></span>
+          Research Question
+        </h2>
+
+        <p class="lead">
+          Under a fixed two-camera SO-101 setup and 50 final training demonstrations, how does SmolVLA-450M performance on a tube-in-hole task change between training-matched conditions, unseen tube starting positions, altered lighting, and a displaced overhead camera?
+        </p>
+
+        <div class="highlight-grid">
+          <div class="highlight-item">
+            <h3>Lab automation is rigid, not blind</h3>
+            <p>
+              The OT-2 runs reliably because every object location is calibrated in advance. Nudge a rack a few millimetres and the robot keeps executing the same programmed motion until a human notices.
+            </p>
+          </div>
+
+          <div class="highlight-item">
+            <h3>A VLA learns from demonstrations, not coordinates</h3>
+            <p>
+              Instead of programming each waypoint, the operator records teleoperated episodes and the policy imitates them &mdash; which means the policy inherits whatever the demonstrations did and did not cover.
+            </p>
+          </div>
+
+          <div class="highlight-item">
+            <h3>Compact enough to run beside the robot</h3>
+            <p>
+              SmolVLA-450M predicts chunks of roughly 50 future actions and is small enough for local inference, which mattered here: training ran on an A100, but deployment ran on a MacBook M1 Pro.
+            </p>
+          </div>
+
+          <div class="highlight-item">
+            <h3>The interesting question is robustness</h3>
+            <p>
+              Not whether the arm can perform the motion once, but whether it still works when the tube moves, the lights change, or someone bumps the camera &mdash; the ordinary events of a shared lab.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-card">
+        <h2 class="section-title">
+          <span class="icon"><i class="fa-solid fa-microscope"></i></span>
+          Experimental Setup
+        </h2>
+
+        <p class="lead">
+          The SO-101 is an open-source 6-axis arm for imitation-learning research: a passive leader arm moved by hand, an active follower arm that mirrors it, Feetech STS3215 servos with magnetic absolute encoders, and two cameras &mdash; one fixed overhead, one wrist-mounted &mdash; providing the two visual streams SmolVLA requires.
+        </p>
+
+        <div class="figure-row">
+          <div class="figure-box">
+            <img src="images/home_lab_setup_annotated.png" alt="Home-lab testbed with overhead camera stand and SO-101 follower arm">
+            <div class="figure-caption">
+              Home-lab testbed. The black stand on the left holds the fixed overhead camera, the orange SO-101 follower arm is on the right, and the paper grid marks the task workspace. The wrist camera moves with the end-effector.
+            </div>
+          </div>
+
+          <div class="figure-box">
+            <img src="images/gripper_angular.png" alt="Top view of the task: tube start region and target hole">
+            <div class="figure-caption">
+              Top view of the setup. The upper red square marks the tube starting position; the larger lower red square marks the goal. The task label supplied to the policy was <code>"Pipe in hole"</code>.
+            </div>
+          </div>
+        </div>
+
+        <div class="method-grid">
+          <div class="method-card">
+            <div class="tag">Data</div>
+            <h3>50 demonstrations</h3>
+            <p>
+              Recorded with <code>lerobot-record</code> at 640&times;480 and 30 fps from two OpenCV cameras. More than 300 episodes were recorded in total while debugging camera placement, lighting, and gripper approach; only 50 successful ones formed the final dataset.
+            </p>
+          </div>
+
+          <div class="method-card">
+            <div class="tag">Training</div>
+            <h3>SmolVLA-450M fine-tune</h3>
+            <p>
+              <code>lerobot/smolvla_base</code> fine-tuned for 30,000 steps at batch size 16 with AMP on one A100 40&nbsp;GB GPU. Training loss fell from roughly 0.08 to about 0.01 and then flattened, with a bounded gradient norm.
+            </p>
+          </div>
+
+          <div class="method-card">
+            <div class="tag">Inference</div>
+            <h3>Local, next to the arm</h3>
+            <p>
+              The trained policy ran on a MacBook M1 Pro (16&nbsp;GB) beside the robot. No low-latency tunnel to the cluster was available, so the model had to be small enough for on-device inference.
+            </p>
+          </div>
+        </div>
+
+        <div class="figure-box">
+          <img src="images/training_loss_1.png" alt="Weights & Biases training dashboard">
+          <div class="figure-caption">
+            Training dashboard from Weights &amp; Biases: update time, steps, samples, learning rate, training loss, and gradient norm. The curves indicate a clean, stable run rather than a strong result on their own.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-card">
+        <h2 class="section-title">
+          <span class="icon"><i class="fa-solid fa-chart-line"></i></span>
+          Results
+        </h2>
+
+        <p class="lead">
+          Each condition used 10 trials. A trial counted as successful only if the tube was fully inserted into the target hole without manual correction.
+        </p>
+
+        <div class="results-grid">
+          <div class="metric good">
+            <div class="name">Baseline</div>
+            <div class="value">9 / 10</div>
+            <div class="note">Same cameras, lighting, and start region as training. The single failure was a gripper slip.</div>
+          </div>
+
+          <div class="metric mid">
+            <div class="name">Unseen start positions</div>
+            <div class="value">5 / 10</div>
+            <div class="note">Tube placed in rack slots absent from the final 50 demonstrations.</div>
+          </div>
+
+          <div class="metric good">
+            <div class="name">Lighting change</div>
+            <div class="value">Limited effect</div>
+            <div class="note">Qualitative only: illumination was not measured in lux, so this is not a robustness claim.</div>
+          </div>
+
+          <div class="metric bad">
+            <div class="name">Camera displacement</div>
+            <div class="value">0 / 10</div>
+            <div class="note">A shift of a few centimetres and degrees caused complete failure.</div>
+          </div>
+        </div>
+
+        <div class="figure-row">
+          <div class="figure-box">
+            <img src="images/starting_position.png" alt="Rack slots absent from the training data marked in yellow">
+            <div class="figure-caption">
+              Yellow fields mark tube starting positions absent from the training data. Placing the tube there dropped success from 9/10 to 5/10 &mdash; the arm often reached toward the region where the tube usually appeared during training.
+            </div>
+          </div>
+
+          <div class="figure-box">
+            <img src="images/camera_position.png" alt="Overhead camera after a small deliberate displacement">
+            <div class="figure-caption">
+              The overhead camera after a small deliberate displacement. Even this minor viewpoint shift caused the policy to fail in every trial: it neither located the target slot nor initiated a successful grasp.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="videos" class="section">
+      <div class="section-card">
+        <h2 class="section-title">
+          <span class="icon"><i class="fa-solid fa-clapperboard"></i></span>
+          Videos
+        </h2>
+
+        <p class="lead">
+          The baseline run under training-matched conditions, and an example of the angular gripper losing the tube. Both open on YouTube.
+        </p>
+
+        <div class="video-section-wrap">
+          <div class="swiper demo-swiper">
+            <div class="swiper-wrapper">
+
+              <div class="swiper-slide">
+                <div class="video-shell">
+                  <a class="video-frame" href="https://youtu.be/NdbsRoq-Wh8" target="_blank" rel="noopener" aria-label="Watch the baseline run on YouTube">
+                    <img src="https://img.youtube.com/vi/NdbsRoq-Wh8/maxresdefault.jpg" alt="Baseline: successful tube insertion">
+                    <span class="play-overlay">
+                      <span class="play-button"><i class="fa-solid fa-play"></i></span>
+                    </span>
+                    <span class="watch-label"><i class="fa-brands fa-youtube"></i> Watch on YouTube</span>
+                  </a>
+                  <div class="video-caption">
+                    Baseline condition: the policy picks up the tube and inserts it into the target hole with no manual correction.
+                  </div>
+                </div>
+              </div>
+
+              <div class="swiper-slide">
+                <div class="video-shell">
+                  <a class="video-frame portrait" href="https://youtube.com/shorts/hJA40Uhh7Cs" target="_blank" rel="noopener" aria-label="Watch the gripper failure clip on YouTube">
+                    <img src="https://img.youtube.com/vi/hJA40Uhh7Cs/maxresdefault.jpg" alt="Angular gripper losing the tube">
+                    <span class="play-overlay">
+                      <span class="play-button"><i class="fa-solid fa-play"></i></span>
+                    </span>
+                    <span class="watch-label"><i class="fa-brands fa-youtube"></i> Watch on YouTube</span>
+                  </a>
+                  <div class="video-caption">
+                    Gripper failure: the angular gripper contacts the cylindrical tube along a single line, so the tube slips or rotates out of the grasp.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="two-col">
+        <div class="section-card">
+          <h2 class="section-title">
+            <span class="icon"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
+            Why It Failed
+          </h2>
+
+          <p class="desc-text">
+            The drop from 9/10 to 5/10 suggests the model learned a mixture of tube recognition and a prior over where the tube usually appears in the image. The final dataset never forced the policy to separate "what the tube looks like" from "where the tube usually is."
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Issue</th><th>Interpretation</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Spatial coverage</strong></td>
+                  <td>The 50 episodes omitted several tube start regions, which likely explains the 5/10 result.</td>
+                </tr>
+                <tr>
+                  <td><strong>Visual variation</strong></td>
+                  <td>Lighting varied naturally during recording, which may explain why moderate lighting changes were less damaging.</td>
+                </tr>
+                <tr>
+                  <td><strong>Viewpoint coverage</strong></td>
+                  <td>The overhead camera was fixed during training, so the policy had no reason to learn viewpoint-invariant features.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="desc-text" style="margin-top:18px;">
+            This is the classic imitation-learning distribution shift: the policy is trained on the demonstrator's state distribution but must act under the one its own actions create.
+          </p>
+        </div>
+
+        <div class="section-card">
+          <h2 class="section-title">
+            <span class="icon"><i class="fa-solid fa-hand-back-fist"></i></span>
+            The Gripper Confound
+          </h2>
+
+          <p class="desc-text">
+            The SO-101's angular (scissor) gripper pivots its fingers around a pin. On a cylindrical tube that means a single line of contact instead of an even squeeze &mdash; so a failed trial may reflect a policy error, or merely unstable contact.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Property</th><th>Angular</th><th>Parallel</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Mechanism</strong></td>
+                  <td>Fingers pivot around a pin</td>
+                  <td>Fingers translate linearly</td>
+                </tr>
+                <tr>
+                  <td><strong>Contact area</strong></td>
+                  <td>Single line along object</td>
+                  <td>Full surface contact</td>
+                </tr>
+                <tr>
+                  <td><strong>Force</strong></td>
+                  <td>Uneven; tube slips or rotates</td>
+                  <td>Even; secure and predictable</td>
+                </tr>
+                <tr>
+                  <td><strong>OT-2 relevance</strong></td>
+                  <td>Problematic for tubes and vials</td>
+                  <td>Standard for lab consumables</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-card">
+        <h2 class="section-title">
+          <span class="icon"><i class="fa-solid fa-forward"></i></span>
+          Limitations and Future Work
+        </h2>
+
+        <p class="lead">
+          The lighting and camera-displacement tests were stress tests, not calibrated measurements: illumination was never recorded in lux and the camera displacement was described only approximately. The next iteration should be reproducible by construction.
+        </p>
+
+        <ul class="clean">
+          <li><i class="fa-solid fa-camera"></i><span>Use three rigidly mounted cameras at documented positions, addressing viewpoint rigidity and giving the policy more spatial information.</span></li>
+          <li><i class="fa-solid fa-layer-group"></i><span>Record 150&ndash;200 demonstrations from planned grid regions with prompts that encode the start region, such as <code>"Pipe in hole from left slot"</code>.</span></li>
+          <li><i class="fa-solid fa-grip"></i><span>Replace the angular gripper with a parallel gripper, so policy failures can be told apart from mechanical ones.</span></li>
+          <li><i class="fa-solid fa-lightbulb"></i><span>Control and record lighting with fixed LED panels or a light booth at documented intensity.</span></li>
+          <li><i class="fa-solid fa-microchip"></i><span>Test GPU-based inference, making it possible to compare SmolVLA against larger VLA models on the same dataset and task.</span></li>
+          <li><i class="fa-solid fa-sitemap"></i><span>Treat the VLA as a low-level execution policy for bounded skills, with a separate protocol-level controller deciding what happens next and how to recover from failures.</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-card">
+        <h2 class="section-title">
+          <span class="icon"><i class="fa-solid fa-flag-checkered"></i></span>
+          Conclusion
+        </h2>
+
+        <p class="abstract-text">
+          Compact VLA control can perform a simple lab-relevant manipulation when the physical scene is reproduced closely: 9 out of 10 under training-matched conditions. But success fell to 5 out of 10 from unseen tube positions and to zero after a small camera shift, so this version is not ready for a busy shared lab. The next version needs rigid camera mounting, broader prompted demonstrations across the working area, measured lighting, and a parallel gripper that holds cylindrical tubes consistently &mdash; changes that would also separate genuine policy failures from avoidable setup and hardware ones.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer container">
+    Ferdinand Paar &middot; Radboud University &middot; BKI209 &middot; June 2026<br>
+    <a href="https://github.com/FerdinandPaar/so101-smolvla-pipe-in-hole">Code</a> &middot;
+    <a href="main.pdf">Report</a> &middot;
+    <a href="https://huggingface.co/datasets/mundgelenk/so101_50_pipe_in_hole">Dataset</a> &middot;
+    <a href="https://huggingface.co/mundgelenk/smolvla_so101_pipe_in_hole">Model</a>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+  <script>
+    new Swiper(".demo-swiper", {
+      slidesPerView: 1,
+      spaceBetween: 12,
+      loop: false,
+      navigation: {
+        nextEl: ".demo-swiper .swiper-button-next",
+        prevEl: ".demo-swiper .swiper-button-prev",
+      },
+      pagination: {
+        el: ".demo-swiper .swiper-pagination",
+        clickable: true,
+      },
+    });
+  </script>
+
+</body>
+</html>
